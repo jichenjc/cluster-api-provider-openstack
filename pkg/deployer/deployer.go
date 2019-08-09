@@ -30,11 +30,12 @@ func (d *Deployer) GetIP(cluster *clusterv1.Cluster, machine *clusterv1.Machine)
 			}
 			var endpoint string
 			if clusterProviderSpec.ManagedAPIServerLoadBalancer {
+				ip = "10.43.0.112"
 				endpoint = fmt.Sprintf("%s:%d", ip, clusterProviderSpec.APIServerLoadBalancerPort)
 			} else {
 				// TODO: replace hardcoded port 443 as soon as controlPlaneEndpoint is specified via
 				// ClusterConfiguration (in Cluster CRD)
-				endpoint = fmt.Sprintf("%s:443", ip)
+				endpoint = fmt.Sprintf("%s:6443", ip)
 			}
 			klog.Infof("Returning endpoint from machine annotation %s", endpoint)
 			return endpoint, nil
@@ -67,9 +68,14 @@ func (d *Deployer) GetKubeConfig(cluster *clusterv1.Cluster, master *clusterv1.M
 		return "", errors.New("key not found in clusterProviderSpec")
 	}
 
+	apiHost := clusterProviderSpec.APIServerLoadBalancerFloatingIP
+	if apiHost == "" {
+		apiHost = "10.43.0.112"
+	}
+
 	var apiServerEndpoint string
 	if clusterProviderSpec.ManagedAPIServerLoadBalancer {
-		apiServerEndpoint = fmt.Sprintf("https://%s:%d", clusterProviderSpec.APIServerLoadBalancerFloatingIP, clusterProviderSpec.APIServerLoadBalancerPort)
+		apiServerEndpoint = fmt.Sprintf("https://%s:%d", apiHost, clusterProviderSpec.APIServerLoadBalancerPort)
 	} else {
 		var endpoint string
 		if master != nil {

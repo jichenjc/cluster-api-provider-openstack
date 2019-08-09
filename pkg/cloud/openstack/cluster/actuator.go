@@ -92,8 +92,15 @@ func (a *Actuator) Reconcile(cluster *clusterv1.Cluster) error {
 	}
 
 	klog.Infof("Reconciling network components for cluster %s", clusterName)
-	if clusterProviderSpec.NodeCIDR == "" {
-		klog.V(4).Infof("No need to reconcile network for cluster %s", clusterName)
+	a1 := 1
+	//if clusterProviderSpec.NodeCIDR == "" {
+	if a1 == 1 {
+		//if clusterProviderSpec.ManagedAPIServerLoadBalancer {
+			err = networkingService.ReconcileLoadBalancer(clusterName, clusterProviderSpec, clusterProviderStatus)
+			if err != nil {
+				return errors.Errorf("failed to reconcile load balancer: %v", err)
+			}
+		//}
 	} else {
 		err := networkingService.ReconcileNetwork(clusterName, clusterProviderSpec, clusterProviderStatus)
 		if err != nil {
@@ -151,6 +158,7 @@ func (a *Actuator) Reconcile(cluster *clusterv1.Cluster) error {
 // Delete deletes a cluster and is invoked by the Cluster Controller
 func (a *Actuator) Delete(cluster *clusterv1.Cluster) error {
 	klog.Infof("Deleting Cluster %s/%s", cluster.Namespace, cluster.Name)
+	clusterName := fmt.Sprintf("%s-%s", cluster.Namespace, cluster.Name)
 
 	osProviderClient, clientOpts, err := provider.NewClientFromCluster(a.params.KubeClient, cluster)
 	if err != nil {
@@ -163,9 +171,16 @@ func (a *Actuator) Delete(cluster *clusterv1.Cluster) error {
 	}
 
 	// Load provider spec & status.
-	_, clusterProviderStatus, err := providerv1.ClusterSpecAndStatusFromProviderSpec(cluster)
+	clusterProviderSpec, clusterProviderStatus, err := providerv1.ClusterSpecAndStatusFromProviderSpec(cluster)
 	if err != nil {
 		return err
+	}
+
+	if clusterProviderSpec.ManagedAPIServerLoadBalancer {
+		err = networkingService.DeleteLoadBalancer(clusterName, clusterProviderSpec, clusterProviderStatus)
+		if err != nil {
+			return errors.Errorf("failed to delete load balancer: %v", err)
+		}
 	}
 
 	// Delete other things
@@ -224,11 +239,16 @@ func (a *Actuator) storeCluster(cluster *clusterv1.Cluster, clusterCopy *cluster
 	// non-LoadBalancer case. For now it doesn't matter because the Status is not
 	// used yet.
 	apiServerHost := clusterProviderSpec.APIServerLoadBalancerFloatingIP
+	if apiServerHost == "" {
+		apiServerHost = "10.43.0.112"	
+	}
+
 	apiServerPort := clusterProviderSpec.APIServerLoadBalancerPort
 	if clusterProviderSpec.ManagedAPIServerLoadBalancer {
 		if clusterProviderStatus.Network != nil && clusterProviderStatus.Network.APIServerLoadBalancer != nil &&
 			apiServerHost != clusterProviderStatus.Network.APIServerLoadBalancer.IP {
-			return fmt.Errorf("APIServerLoadBalancer has IP %s instead of IP %s", clusterProviderStatus.Network.APIServerLoadBalancer.IP, apiServerHost)
+			//return fmt.Errorf("APIServerLoadBalancer has IP %s instead of IP %s", clusterProviderStatus.Network.APIServerLoadBalancer.IP, apiServerHost)
+			
 		}
 	}
 	// Check if API endpoints is not set or has changed.
