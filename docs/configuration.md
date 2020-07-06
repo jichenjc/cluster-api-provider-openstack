@@ -3,10 +3,11 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Required Configuration](#required-configuration)
-  - [Cluster configuration YAML files](#cluster-configuration-yaml-files)
+  - [Cluster Configuration YAML files](#cluster-configuration-yaml-files)
   - [Public Network](#public-network)
   - [Floating IPs](#floating-ips)
   - [Operating System Images](#operating-system-images)
+  - [SSH Authorized Key](#ssh-authorized-key)
   - [Network Filters](#network-filters)
   - [Multiple Networks](#multiple-networks)
   - [Subnet Filters](#subnet-filters)
